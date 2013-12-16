@@ -1,6 +1,5 @@
 
 #include <sally/sally.h>
-#include <olsr/OLSR.h>
 
 
 
@@ -13,7 +12,7 @@ public:
 	}
 } class_rtProtoSALLY;
 
-Sally::Sally(nsaddr_t id) :	OLSR(id) {
+Sally::Sally(nsaddr_t id) :	Agent(PT_OLSR), OLSR(id), AODV(id) {
 }
 
 void

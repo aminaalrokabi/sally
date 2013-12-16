@@ -4,16 +4,13 @@
 
 #include "agent.h"
 #include "olsr/OLSR.h"
-#include "tclcl.h"
-#include "packet.h"
-#include "address.h"
-#include "ip.h"
+#include "aodv/aodv.h"
 
-class Sally : public OLSR {
+class Sally : public OLSR, public AODV {
  public:
 	Sally(nsaddr_t);
-	int command(int argc, const char*const* argv);
-	void recv(Packet*, Handler*);
+	virtual int command(int argc, const char*const* argv);
+	virtual void recv(Packet*, Handler*);
 };
 
 #endif
