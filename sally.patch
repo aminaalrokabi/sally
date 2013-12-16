@@ -1,0 +1,81 @@
+diff -rauB /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/olsr_modified/OLSR.h ../olsr/OLSR.h
+--- /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/olsr_modified/OLSR.h	2013-12-16 23:10:26.000000000 +0000
++++ ../olsr/OLSR.h	2013-12-16 23:13:59.269769534 +0000
+@@ -312,7 +312,7 @@
+ /// functionalities related to sending and receiving packets and managing
+ /// internal state.
+ ///
+-class OLSR : public Agent {
++class OLSR : virtual public Agent {
+ 	// Makes some friends.
+ 	friend class OLSR_HelloTimer;
+ 	friend class OLSR_TcTimer;
+diff -rauB /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/aodv/aodv.h ../aodv/aodv.h
+--- /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/aodv/aodv.h	2009-06-14 18:35:07.000000000 +0100
++++ ../aodv/aodv.h	2013-12-16 19:16:29.921240672 +0000
+@@ -191,7 +191,7 @@
+ /*
+   The Routing Agent
+ */
+-class AODV: public Agent {
++class AODV: virtual public Agent {
+ 
+   /*
+    * make some friends first 
+diff -drauB /hdd2/Dropbox/Olsr\ reactive/ns-2.34_olsr/Makefile.in ../Makefile.in
+--- /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/Makefile.in	2012-02-05 23:05:46.000000000 +0000
++++ ../Makefile.in	2013-12-16 16:39:45.548891631 +0000
+@@ -277,6 +277,7 @@
+ 	aomdv/aomdv_logs.o aomdv/aomdv.o \
+ 	aomdv/aomdv_rtable.o aomdv/aomdv_rqueue.o \
+ 	olsr/OLSR.o olsr/OLSR_state.o olsr/OLSR_rtable.o olsr/OLSR_printer.o \
++    sally/sally.o \
+ 	common/ns-process.o \
+ 	satellite/satgeometry.o satellite/sathandoff.o \
+ 	satellite/satlink.o satellite/satnode.o \
+diff -drauB /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/tcl/lib/ns-default.tcl ../tcl/lib/ns-default.tcl
+--- /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/tcl/lib/ns-default.tcl	2012-02-05 23:05:46.000000000 +0000
++++ ../tcl/lib/ns-default.tcl	2013-12-16 17:38:25.485022271 +0000
+@@ -1371,6 +1371,14 @@
+ Agent/OLSR set tc_ival_     5
+ Agent/OLSR set mid_ival_    5
+ 
++# Defaults defined for UM-OLSR
++Agent/SALLY set debug_       false
++Agent/SALLY set use_mac_     false
++Agent/SALLY set willingness_ 3
++Agent/SALLY set hello_ival_  2
++Agent/SALLY set tc_ival_     5
++Agent/SALLY set mid_ival_    5
++
+ # Intitialization for directed diffusion : Chalermek
+ Agent/Diff_Sink set packetSize_ 512
+ Agent/Diff_Sink set interval_   0.5
+diff -drauB /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/tcl/lib/ns-lib.tcl ../tcl/lib/ns-lib.tcl
+--- /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/tcl/lib/ns-lib.tcl	2012-02-05 23:05:46.000000000 +0000
++++ ../tcl/lib/ns-lib.tcl	2013-12-16 17:26:44.748996263 +0000
+@@ -636,6 +636,9 @@
+ 		    OLSR {
+ 			    set ragent [$self create-olsr-agent $node]
+ 		    }
++		    SALLY {
++			    set ragent [$self create-sally-agent $node]
++		    }
+ 		    TORA {
+ 			    Simulator set IMEPFlag_ ON
+ 			    set ragent [$self create-tora-agent $node]
+@@ -870,6 +873,14 @@
+ 	$self at 0.0 "$ragent start"
+ 	$node set ragent_ $ragent
+ 	return $ragent
++}
++
++Simulator instproc create-sally-agent { node } {
++	#  Create UM-OLSR routing agent
++	set ragent [new Agent/SALLY [$node node-addr]]
++	$self at 0.0 "$ragent start"
++	$node set ragent_ $ragent
++	return $ragent
+ }
+ 
+ Simulator instproc use-newtrace {} {
