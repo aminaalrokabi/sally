@@ -16,6 +16,15 @@ Sally::Sally(nsaddr_t id) :	Agent(PT_OLSR), OLSR(id), AODV(id) {
 
 void
 Sally::recv(Packet* p, Handler* h) {
+	struct hdr_cmn *ch = HDR_CMN(p);
+	struct hdr_ip *ih = HDR_IP(p);
+
+	if(ch->ptype() == PT_AODV) {
+	   ih->ttl_ -= 1;
+	   recvAODV(p);
+	   return;
+	 }
+
 	OLSR::recv(p, h);
 }
 
@@ -32,7 +41,7 @@ Sally::command(int argc, const char*const* argv) {
 
 void
 Sally::post_rtable_computation(Packet* p) {
-	AODV::rt_resolve(p);
+	rt_resolve(p);
 }
 
 static void
