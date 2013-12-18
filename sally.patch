@@ -1,6 +1,26 @@
-diff -rauB /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/olsr_modified/OLSR.h ../olsr/OLSR.h
+diff -rauB /hdd2/Dropbox/Olsr\ reactive/ns-2.34_olsr/olsr_modified/OLSR.cc ../olsr/OLSR.cc
+--- /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/olsr_modified/OLSR.cc	2013-12-16 22:52:20.000000000 +0000
++++ ../olsr/OLSR.cc	2013-12-18 00:17:03.497609971 +000
+@@ -560,11 +560,15 @@
+ 	
+ 	// After processing all OLSR messages, we must recompute routing table
+ 	rtable_computation();
+-	
++	post_rtable_computation(p);
+ 	// Release resources
+ 	Packet::free(p);
+ }
+ 
++void
++OLSR::post_rtable_computation(Packet* p) {
++
++}
+ ///
+ /// \brief Computates MPR set of a node following RFC 3626 hints.
+ ///
+diff -rauB /hdd2/Dropbox/Olsr\ reactive/ns-2.34_olsr/olsr_modified/OLSR.h ../olsr/OLSR.h
 --- /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/olsr_modified/OLSR.h	2013-12-16 23:10:26.000000000 +0000
-+++ ../olsr/OLSR.h	2013-12-16 23:13:59.269769534 +0000
++++ ../olsr/OLSR.h	2013-12-18 00:14:47.877604939 +0000
 @@ -312,7 +312,7 @@
  /// functionalities related to sending and receiving packets and managing
  /// internal state.
@@ -10,9 +30,34 @@ diff -rauB /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/olsr_modified/OLSR.h ../olsr
  	// Makes some friends.
  	friend class OLSR_HelloTimer;
  	friend class OLSR_TcTimer;
-diff -rauB /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/aodv/aodv.h ../aodv/aodv.h
+@@ -324,6 +324,7 @@
+ 	friend class OLSR_TopologyTupleTimer;
+ 	friend class OLSR_IfaceAssocTupleTimer;
+ 	friend class OLSR_MsgTimer;
++	friend class Sally;
+ 	
+ 	/// Address of the routing agent.
+ 	nsaddr_t	ra_addr_;
+@@ -393,13 +394,15 @@
+ 	
+ 	void		mpr_computation();
+ 	void		rtable_computation();
++	virtual void		post_rtable_computation(Packet*);
++
+ 	
+ 	void		process_hello(OLSR_msg&, nsaddr_t, nsaddr_t);
+ 	void		process_tc(OLSR_msg&, nsaddr_t);
+ 	void		process_mid(OLSR_msg&, nsaddr_t);
+ 	
+ 	void		forward_default(Packet*, OLSR_msg&, OLSR_dup_tuple*, nsaddr_t);
+-	void		forward_data(Packet*);
++	virtual void		forward_data(Packet*);
+ 	
+ 	void		enque_msg(OLSR_msg&, double);
+ 	void		send_hello();
+diff -drauB /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/aodv/aodv.h ../aodv/aodv.h
 --- /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/aodv/aodv.h	2009-06-14 18:35:07.000000000 +0100
-+++ ../aodv/aodv.h	2013-12-16 19:16:29.921240672 +0000
++++ ../aodv/aodv.h	2013-12-17 21:21:57.109220030 +0000
 @@ -191,7 +191,7 @@
  /*
    The Routing Agent
@@ -22,6 +67,29 @@ diff -rauB /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/aodv/aodv.h ../aodv/aodv.h
  
    /*
     * make some friends first 
+@@ -216,7 +215,7 @@
+         /*
+          * Route Table Management
+          */
+-        void            rt_resolve(Packet *p);
++        virtual void            rt_resolve(Packet *p);
+         void            rt_update(aodv_rt_entry *rt, u_int32_t seqnum,
+ 		     	  	u_int16_t metric, nsaddr_t nexthop,
+ 		      		double expire_time);
+Only in ../aodv/: aodv_logs.o
+Only in ../aodv/: aodv.o
+Only in ../aodv/: aodv_rqueue.o
+diff -drauB /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/aodv/aodv_rtable.h ../aodv/aodv_rtable.h
+--- /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/aodv/aodv_rtable.h	2009-06-14 18:35:07.000000000 +0100
++++ ../aodv/aodv_rtable.h	2013-12-18 01:04:49.685716353 +0000
+@@ -81,6 +81,7 @@
+ class aodv_rt_entry {
+         friend class aodv_rtable;
+         friend class AODV;
++        friend class Sally;
+ 	friend class LocalRepairTimer;
+  public:
+         aodv_rt_entry();
 diff -drauB /hdd2/Dropbox/Olsr\ reactive/ns-2.34_olsr/Makefile.in ../Makefile.in
 --- /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/Makefile.in	2012-02-05 23:05:46.000000000 +0000
 +++ ../Makefile.in	2013-12-16 16:39:45.548891631 +0000
@@ -79,3 +147,21 @@ diff -drauB /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/tcl/lib/ns-lib.tcl ../tcl/l
  }
  
  Simulator instproc use-newtrace {} {
+
+diff -drauB /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/tcl/lib/ns-mobilenode.tcl ../tcl/lib/ns-mobilenode.tcl
+--- /hdd2/Dropbox/Olsr reactive/ns-2.34_olsr/tcl/lib/ns-mobilenode.tcl	2009-06-14 18:35:41.000000000 +0100
++++ ../tcl/lib/ns-mobilenode.tcl	2013-12-17 16:04:04.460512152 +0000
+@@ -198,6 +198,12 @@
+ 		$agent if-queue [$self set ifq_(0)]   ;# ifq between LL and MAC
+ 	}
+ 	
++	# Special processing for SALLY
++	set sallyonly [string first "SALLY" [$agent info class]] 
++	if {$sallyonly != -1 } {
++		$agent if-queue [$self set ifq_(0)]   ;# ifq between LL and MAC
++	}
++	
+ 	#<zheng: add>
+ 	# Special processing for ZBR
+ 	#set zbronly [string first "ZBR" [$agent info class]] 
+
